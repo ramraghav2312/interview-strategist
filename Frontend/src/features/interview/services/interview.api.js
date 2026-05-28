@@ -1,8 +1,10 @@
 import axios from "axios";
 
 // Environment variable se live URL uthayega, nahi toh fallback local par chalega
+import axios from "axios";
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+    baseURL: "", // Blank chhod do! Vercel Proxy ab khud handle karega
     withCredentials: true,
 })
 
