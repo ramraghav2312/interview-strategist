@@ -167,7 +167,7 @@ const Home = () => {
                                     {fileName ? `✓ Selected:` : 'Click to upload or drag & drop'}
                                 </p>
                                 <p className='dropzone__subtitle' style={{ fontWeight: fileName ? '600' : 'normal', color: fileName ? '#4caf50' : 'inherit' }}>
-                                    {fileName ? fileName : 'PDF or DOCX (Max 5MB)'}
+                                    {fileName ? fileName : 'PDF (Max 5MB)'}
                                 </p>
 
                                 <input
@@ -176,7 +176,7 @@ const Home = () => {
                                     type='file'
                                     id='resume'
                                     name='resume'
-                                    accept='.pdf,.docx'
+                                    accept='.pdf'
                                     onChange={handleFileChange}
                                 />
                             </label>
