@@ -45,19 +45,22 @@ export const useInterview = () => {
     }
 
     const getReports = async (searchTerm = "") => {
-        setLoading(true)
-        let response = null
         try {
-            response = await getAllInterviewReports(searchTerm)
-            setReports(response.interviewReports)
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setLoading(false)
-        }
+            // Backend se data mangwao
+            const data = await getAllInterviewReports(searchTerm);
 
-        return response.interviewReports
-    }
+            // Agar data sahi se aaya hai, tabhi state set karo
+            if (data && data.interviewReports) {
+                setReports(data.interviewReports);
+            } else {
+                setReports([]); // Agar data nahi aaya toh khali list set kar do
+            }
+        } catch (error) {
+            // Agar 401 Unauthorized aaye, toh app crash na karein
+            console.error("Reports fetch failed (User might not be logged in):", error);
+            setReports([]);
+        }
+    };
 
     const getResumePdf = async (interviewReportId) => {
         setLoading(true)
