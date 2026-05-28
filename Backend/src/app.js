@@ -8,20 +8,18 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = [
-            "http://localhost:5173",
-            "https://interview-strategist.vercel.app"
-        ];
-        // Agar request local machine se bina origin ke (ya postman se) aaye, toh allow karein
+        // Agar request Postman ya mobile app se aaye (jiska origin nahi hota)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.includes(origin)) {
+        // Localhost ko aur VERCEL ke kisi bhi URL ko allow karne ki ninja technique
+        if (origin === "http://localhost:5173" || origin.includes("vercel.app")) {
             return callback(null, true);
         } else {
+            console.log("Blocked by CORS. Origin:", origin); // Render logs me clear dikhega
             return callback(new Error('Not allowed by CORS'), false);
         }
     },
-    credentials: true
+    credentials: true // Cookies allow karne ke liye
 }));
 
 /* require all the routes here */
