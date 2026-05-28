@@ -9,7 +9,7 @@ const Home = () => {
     const [selfDescription, setSelfDescription] = useState("")
     const [fileName, setFileName] = useState("");
 
-    // NEW LOCAL STATES TO FIX THE BLINKING
+    // LOCAL STATES TO FIX THE BLINKING
     const [searchTerm, setSearchTerm] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -33,23 +33,26 @@ const Home = () => {
         setIsGenerating(false);
     }
 
-    // SECURE LOGOUT HANDLER
+    // SECURE LOGOUT HANDLER (FIXED FOR LIVE PRODUCTION ENVIRONMENT)
     const handleLogout = async () => {
         try {
+            // Dynamic baseURL backup ke sath local ya live khud chun lega
+            const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
             // 1. Backend API call to blacklist token and destroy cookies
-            await fetch('http://localhost:3000/api/auth/logout', {
+            await fetch(`${baseURL}/api/auth/logout`, {
                 method: 'GET',
-                credentials: 'include' // Ye magic word zaroori hai taaki browser request ke sath cookies bheje
+                credentials: 'include' // Cookies share karne ke liye mandatory hai
             });
 
-            // 2. Local storage safety sweep (agar aap token yahan bhi save kar rahe the)
+            // 2. Local storage safety sweep
             localStorage.removeItem('token'); 
             
-            // 3. User ko login page par fenk do
+            // 3. User ko login page par redirect karein
             navigate('/login'); 
         } catch (error) {
             console.error("Logout failed:", error);
-            // Agar network error bhi aaye, tab bhi user ko login par bhej dena chahiye safe side ke liye
+            // Safety measure: Network error aane par bhi front-end se user nikal jana chahiye
             navigate('/login');
         }
     };
@@ -63,7 +66,7 @@ const Home = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm]);
 
-    // UI FIX: Now it only listens to our local 'isGenerating' state
+    // UI FIX: Loader handles smooth transaction
     if (isGenerating) {
         return (
             <main className='loading-screen'>
@@ -74,7 +77,7 @@ const Home = () => {
 
     return (
         <div className='home-page'>
-            {/* NEW: Top Action Bar (Button right me chala jayega) */}
+            {/* Top Action Bar (Logout align to parallel right) */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: '-1rem', position: 'relative', zIndex: 10 }}>
                 <button
                     onClick={handleLogout}
@@ -216,7 +219,7 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* UI FIX: Search section always renders, even if 0 reports match */}
+            {/* Recent Reports List with Safe State Handlers */}
             <section className='recent-reports'>
                 <h2>My Recent Interview Plans</h2>
 
@@ -229,7 +232,7 @@ const Home = () => {
                     style={{ height: "45px", marginBottom: "1.5rem", width: "100%", maxWidth: "400px", display: "block" }}
                 />
 
-                {reports.length > 0 ? (
+                {reports && reports.length > 0 ? (
                     <ul className='reports-list'>
                         {reports.map(report => (
                             <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
@@ -240,15 +243,16 @@ const Home = () => {
                         ))}
                     </ul>
                 ) : (
-                    /* Shows nicely when a wrong word is typed! */
                     <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", backgroundColor: "#0f1322", borderRadius: "8px", border: "1px dashed #222d4a" }}>
-                        <p>No interview plans found matching "{searchTerm}".</p>
-                        <button
-                            onClick={() => setSearchTerm("")}
-                            style={{ marginTop: "1rem", background: "transparent", color: "#8b5cf6", border: "none", cursor: "pointer", fontWeight: "600" }}
-                        >
-                            Clear Search
-                        </button>
+                        <p>No interview plans found matching "{searchTerm || 'your query'}".</p>
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                style={{ marginTop: "1rem", background: "transparent", color: "#8b5cf6", border: "none", cursor: "pointer", fontWeight: "600" }}
+                            >
+                                Clear Search
+                            </button>
+                        )}
                     </div>
                 )}
             </section>
@@ -263,4 +267,4 @@ const Home = () => {
     )
 }
 
-export default Home
+export default Home;
