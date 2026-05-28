@@ -1,3 +1,4 @@
+@use "sass:color";
 // ── Shared Variables (mirrors home.scss theme) ────────────────────────────────
 $bg-page: #0d1117;
 $bg-card: #161b22;
@@ -172,7 +173,7 @@ $severity-low: #3fb950;
     transition: border-color 0.2s;
 
     &:hover {
-        border-color: lighten($border-color, 8%);
+        border-color: color.adjust($border-color, $lightness: 8%);
     }
 
     &__header {
@@ -234,7 +235,7 @@ $severity-low: #3fb950;
         p {
             margin: 0;
             font-size: 0.835rem;
-            color: lighten($text-muted, 15%);
+            color: color.adjust($text-muted, $lightness: 15%);
             line-height: 1.6;
         }
     }
@@ -338,7 +339,7 @@ $severity-low: #3fb950;
             align-items: flex-start;
             gap: 0.5rem;
             font-size: 0.845rem;
-            color: lighten($text-muted, 12%);
+            color: color.adjust($text-muted, $lightness: 12%);
             line-height: 1.5;
         }
     }
@@ -475,5 +476,43 @@ $severity-low: #3fb950;
         color: $severity-low;
         background-color: rgba($severity-low, 0.1);
         border-color: rgba($severity-low, 0.25);
+    }
+}
+
+
+/* ==========================================================================
+   THE MAGIC PDF PRINT ENGINE
+   ========================================================================== */
+
+/* Keep the print layout hidden on the normal website */
+.print-only-layout {
+    display: none; 
+}
+
+@media print {
+    /* 1. Hide the entire normal React website layout */
+    .interview-layout {
+        display: none !important;
+    }
+
+    /* 2. Show ONLY the clean PDF layout */
+    .print-only-layout {
+        display: block !important;
+        color: #000 !important; /* Black text for paper */
+        background: #fff !important; /* White background */
+    }
+
+    /* 3. The Page Break Fix (No more sliced text!) */
+    .print-card {
+        page-break-inside: avoid; /* Tells the PDF engine to push this to the next page instead of cutting it in half */
+        break-inside: avoid;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+
+    /* Set nice margins for A4 paper */
+    @page {
+        margin: 15mm; 
     }
 }

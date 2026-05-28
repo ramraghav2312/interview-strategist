@@ -40,10 +40,9 @@ export const getInterviewReportById = async (interviewId) => {
 /**
  * @description Service to get all interview reports of logged in user.
  */
-export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/")
-
-    return response.data
+export const getAllInterviewReports = async (searchTerm = "") => {
+    const response = await api.get(`/api/interview/?search=${searchTerm}`);
+    return response.data;
 }
 
 
@@ -56,4 +55,15 @@ export const generateResumePdf = async ({ interviewReportId }) => {
     })
 
     return response.data
+}
+
+/**
+ * @description Service to toggle a task checkbox in a specific report
+ */
+export const toggleTaskStatus = async (interviewId, dayIndex, taskIndex) => {
+    const response = await api.patch(`/api/interview/report/${interviewId}/task`, {
+        dayIndex,
+        taskIndex
+    });
+    return response.data;
 }

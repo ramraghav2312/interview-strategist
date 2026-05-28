@@ -38,5 +38,11 @@ interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInte
 interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
 
 
+/**
+ * @route PATCH /api/interview/report/:interviewId/task
+ * @description Toggle checkbox status of a specific task
+ * @access private
+ */
+interviewRouter.patch("/report/:interviewId/task", authMiddleware.authUser, interviewController.toggleTaskCompletionController)
 
 module.exports = interviewRouter

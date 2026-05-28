@@ -61,7 +61,12 @@ const preparationPlanSchema = new mongoose.Schema({
     tasks: [ {
         type: String,
         required: [ true, "Task is required" ]
-    } ]
+    } ],
+    // NEW: Stores the index numbers of tasks the user has checked off
+    completedTasks: {
+        type: [Number],
+        default: []
+    }
 })
 
 const interviewReportSchema = new mongoose.Schema({

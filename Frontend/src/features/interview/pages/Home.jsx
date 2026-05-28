@@ -1,24 +1,70 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
 
 const Home = () => {
+    const { generateReport, reports, getReports } = useInterview()
+    const [jobDescription, setJobDescription] = useState("")
+    const [selfDescription, setSelfDescription] = useState("")
+    const [fileName, setFileName] = useState("");
 
-    const { loading, generateReport,reports } = useInterview()
-    const [ jobDescription, setJobDescription ] = useState("")
-    const [ selfDescription, setSelfDescription ] = useState("")
+    // NEW LOCAL STATES TO FIX THE BLINKING
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFileName(file.name);
+        } else {
+            setFileName("");
+        }
+    };
+
     const resumeInputRef = useRef()
-
     const navigate = useNavigate()
 
     const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current.files[ 0 ]
+        setIsGenerating(true); // Only show full-page loader when generating a new report
+        const resumeFile = resumeInputRef.current.files[0]
         const data = await generateReport({ jobDescription, selfDescription, resumeFile })
         navigate(`/interview/${data._id}`)
+        setIsGenerating(false);
     }
 
-    if (loading) {
+    // SECURE LOGOUT HANDLER
+    const handleLogout = async () => {
+        try {
+            // 1. Backend API call to blacklist token and destroy cookies
+            await fetch('http://localhost:3000/api/auth/logout', {
+                method: 'GET',
+                credentials: 'include' // Ye magic word zaroori hai taaki browser request ke sath cookies bheje
+            });
+
+            // 2. Local storage safety sweep (agar aap token yahan bhi save kar rahe the)
+            localStorage.removeItem('token'); 
+            
+            // 3. User ko login page par fenk do
+            navigate('/login'); 
+        } catch (error) {
+            console.error("Logout failed:", error);
+            // Agar network error bhi aaye, tab bhi user ko login par bhej dena chahiye safe side ke liye
+            navigate('/login');
+        }
+    };
+
+    // SEARCH DEBOUNCE ENGINE
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            getReports(searchTerm);
+        }, 1000);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
+
+    // UI FIX: Now it only listens to our local 'isGenerating' state
+    if (isGenerating) {
         return (
             <main className='loading-screen'>
                 <h1>Loading your interview plan...</h1>
@@ -28,6 +74,35 @@ const Home = () => {
 
     return (
         <div className='home-page'>
+            {/* NEW: Top Action Bar (Button right me chala jayega) */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: '-1rem', position: 'relative', zIndex: 10 }}>
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        backgroundColor: 'transparent',
+                        color: '#ef4444',
+                        border: '1px solid #ef4444',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '0.9rem',
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)' }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
+            </div>
 
             {/* Page Header */}
             <header className='page-header'>
@@ -54,7 +129,7 @@ const Home = () => {
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
                             maxLength={5000}
                         />
-                        <div className='char-counter'>0 / 5000 chars</div>
+                        <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
 
                     {/* Vertical Divider */}
@@ -75,13 +150,32 @@ const Home = () => {
                                 Upload Resume
                                 <span className='badge badge--best'>Best Results</span>
                             </label>
-                            <label className='dropzone' htmlFor='resume'>
+
+                            <label className={`dropzone ${fileName ? 'dropzone--has-file' : ''}`} htmlFor='resume'>
                                 <span className='dropzone__icon'>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
+                                    {fileName ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
+                                    )}
                                 </span>
-                                <p className='dropzone__title'>Click to upload or drag &amp; drop</p>
-                                <p className='dropzone__subtitle'>PDF or DOCX (Max 5MB)</p>
-                                <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' accept='.pdf,.docx' />
+
+                                <p className='dropzone__title'>
+                                    {fileName ? `✓ Selected:` : 'Click to upload or drag & drop'}
+                                </p>
+                                <p className='dropzone__subtitle' style={{ fontWeight: fileName ? '600' : 'normal', color: fileName ? '#4caf50' : 'inherit' }}>
+                                    {fileName ? fileName : 'PDF or DOCX (Max 5MB)'}
+                                </p>
+
+                                <input
+                                    ref={resumeInputRef}
+                                    hidden
+                                    type='file'
+                                    id='resume'
+                                    name='resume'
+                                    accept='.pdf,.docx'
+                                    onChange={handleFileChange}
+                                />
                             </label>
                         </div>
 
@@ -122,10 +216,20 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* Recent Reports List */}
-            {reports.length > 0 && (
-                <section className='recent-reports'>
-                    <h2>My Recent Interview Plans</h2>
+            {/* UI FIX: Search section always renders, even if 0 reports match */}
+            <section className='recent-reports'>
+                <h2>My Recent Interview Plans</h2>
+
+                <input
+                    type="text"
+                    placeholder="Search by job title or keyword..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="panel__textarea"
+                    style={{ height: "45px", marginBottom: "1.5rem", width: "100%", maxWidth: "400px", display: "block" }}
+                />
+
+                {reports.length > 0 ? (
                     <ul className='reports-list'>
                         {reports.map(report => (
                             <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
@@ -135,8 +239,19 @@ const Home = () => {
                             </li>
                         ))}
                     </ul>
-                </section>
-            )}
+                ) : (
+                    /* Shows nicely when a wrong word is typed! */
+                    <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", backgroundColor: "#0f1322", borderRadius: "8px", border: "1px dashed #222d4a" }}>
+                        <p>No interview plans found matching "{searchTerm}".</p>
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            style={{ marginTop: "1rem", background: "transparent", color: "#8b5cf6", border: "none", cursor: "pointer", fontWeight: "600" }}
+                        >
+                            Clear Search
+                        </button>
+                    </div>
+                )}
+            </section>
 
             {/* Page Footer */}
             <footer className='page-footer'>
